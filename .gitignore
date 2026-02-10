@@ -1,0 +1,6 @@
+# Ignore the backup folder
+copy/
+
+# System files
+.DS_Store
+Thumbs.db
