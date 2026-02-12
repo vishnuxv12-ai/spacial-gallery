@@ -19,6 +19,7 @@ window.galleryParams = {
     gsap.to(window.galleryParams, { cameraZ: 1000, cameraFov: 50, duration: 1.5, ease: "power2.out" });
     gsap.to(window.camera.position, { z: 1000, duration: 1.5, ease: "power2.out", overwrite: true });
     gsap.to(window.camera, { fov: 50, duration: 1.5, ease: "power2.out", onUpdate: () => window.camera.updateProjectionMatrix() });
+    window.optimizeForScreen(); // Re-apply mobile offsets if needed
   },
   dollyZoom: () => {
     const tl = gsap.timeline();
@@ -39,6 +40,46 @@ window.galleryParams = {
     alert('Configuration logged to Console (F12).\nCopy the JSON to gallery.js to save these settings.');
   }
 };
+
+// Optimization for Mobile
+window.optimizeForScreen = () => {
+  const isMobile = window.innerWidth < 900 || window.innerHeight < 600;
+  if (isMobile) {
+    // Determine the smaller dimension (accounting for rotation)
+    // If we forced rotation, the visual width is height.
+    // But window.innerWidth refers to the viewport width.
+    // If body is rotated 90deg, visuals are bound by height.
+
+    // Adjust Sphere Radius to fit
+    // Reduce radius to avoid clipping
+    window.galleryParams.sphereRadius = 900;
+    window.galleryParams.imageScale = 0.8; // Smaller images
+
+    // Adjust Center to fit within bounds
+    // Since we are top-down or landscape in a constrained height
+    window.galleryParams.sphereCenterY = 0;
+    window.galleryParams.sphereCenterZ = -2000; // Pull it closer or further?
+    // If we want it to "not exceed borders", we need it further away or smaller.
+    // -2500 is default.
+  } else {
+    // Desktop Defaults
+    window.galleryParams.sphereRadius = 1320;
+    window.galleryParams.imageScale = 1.0;
+    window.galleryParams.sphereCenterY = -150;
+    window.galleryParams.sphereCenterZ = -2500;
+  }
+
+  // Apply changes
+  if (window.updateGalleryRadius) window.updateGalleryRadius();
+  if (window.mainGroup) {
+    window.mainGroup.position.y = window.galleryParams.sphereCenterY;
+    window.mainGroup.position.z = window.galleryParams.sphereCenterZ;
+  }
+};
+
+// Run optimization immediately
+window.optimizeForScreen();
+window.addEventListener('resize', window.optimizeForScreen);
 
 // --- THREE.JS SETUP ---
 window.scene = new THREE.Scene();
@@ -74,8 +115,8 @@ window.updateGalleryRadius = () => {
 
 // --- GSAP SETUP ---
 // QuickTo for high performance continuous updates
-window.updateSphereRotation = (x, y) => gsap.to(sphereGroup.rotation, {x: x, y: y, duration: 1.2, ease: "power2.out", overwrite: 'auto'});
-window.zoomTo = gsap.quickTo(mainGroup.position, "z", {duration: 0.8, ease: "power2.out"});
+window.updateSphereRotation = (x, y) => gsap.to(sphereGroup.rotation, { x: x, y: y, duration: 1.2, ease: "power2.out", overwrite: 'auto' });
+window.zoomTo = gsap.quickTo(mainGroup.position, "z", { duration: 0.8, ease: "power2.out" });
 
 let galleryOriginalUrls = [];
 let gallerySortedUrls = null;
@@ -92,9 +133,9 @@ const getDominantColor = (url) => {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, 1, 1);
       const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-      resolve({r, g, b});
+      resolve({ r, g, b });
     };
-    img.onerror = () => resolve({r:0, g:0, b:0});
+    img.onerror = () => resolve({ r: 0, g: 0, b: 0 });
   });
 };
 
@@ -103,7 +144,7 @@ const rgbToHsl = (r, g, b) => {
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
   let h, s, l = (max + min) / 2;
   if (max === min) {
-    h = s = 0; 
+    h = s = 0;
   } else {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -123,47 +164,47 @@ async function sortImagesByColor(urls) {
     const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
     return { url, h: hsl[0] };
   });
-  
+
   const results = await Promise.all(colorPromises);
   results.sort((a, b) => a.h - b.h);
   return results.map(item => item.url);
 }
 
 async function toggleColorSort(enable) {
-    if (enable) {
-        if (!gallerySortedUrls) {
-            gallerySortedUrls = await sortImagesByColor(galleryOriginalUrls);
-        }
-        renderGallery(gallerySortedUrls, true);
-    } else {
-        renderGallery(galleryOriginalUrls, true);
+  if (enable) {
+    if (!gallerySortedUrls) {
+      gallerySortedUrls = await sortImagesByColor(galleryOriginalUrls);
     }
+    renderGallery(gallerySortedUrls, true);
+  } else {
+    renderGallery(galleryOriginalUrls, true);
+  }
 }
 
 // 1. GENERATE IMAGES
 function renderGallery(imageUrls, isInternalReorder = false) {
   // Clear existing group
-  while(sphereGroup.children.length > 0){ 
-    sphereGroup.remove(sphereGroup.children[0]); 
+  while (sphereGroup.children.length > 0) {
+    sphereGroup.remove(sphereGroup.children[0]);
   }
-  
+
   // Clear grid
-  while(gridGroup.children.length > 0){ 
-    gridGroup.remove(gridGroup.children[0]); 
+  while (gridGroup.children.length > 0) {
+    gridGroup.remove(gridGroup.children[0]);
   }
-  
+
   if (!isInternalReorder) {
     galleryOriginalUrls = [...imageUrls];
     gallerySortedUrls = null;
   }
 
   const numImages = imageUrls.length;
-  
+
   // Update Image Count in Bento Grid
   const countEl = document.getElementById('image-count');
   if (countEl) countEl.innerText = `Images: ${numImages}`;
 
-  
+
   // Dynamic Grid Configuration
   // (Used for wireframes)
   const totalPoints = Math.max(50, numImages * 2);
@@ -183,21 +224,21 @@ function renderGallery(imageUrls, isInternalReorder = false) {
     const x = Math.cos(theta) * radius;
     const z = Math.sin(theta) * radius;
 
-      const img = document.createElement('img');
-      img.src = imageUrls[i];
-      img.className = 'image-item';
-      img.style.width = '212.91px';
-      img.style.height = 'auto';
-      
-      // Create CSS3D Object
-      const object = new THREE.CSS3DObject(img);
-      object.position.set(x * window.galleryParams.sphereRadius, y * window.galleryParams.sphereRadius, z * window.galleryParams.sphereRadius);
-      // Face the center of the sphere (Inwards)
-      object.lookAt(0, 0, 0);
-      img.threeObject = object; // Link DOM element to 3D object for interaction
-      object.userData = { isImage: true, normalizedPos: new THREE.Vector3(x, y, z), radiusScale: 1 };
-      
-      sphereGroup.add(object);
+    const img = document.createElement('img');
+    img.src = imageUrls[i];
+    img.className = 'image-item';
+    img.style.width = '212.91px';
+    img.style.height = 'auto';
+
+    // Create CSS3D Object
+    const object = new THREE.CSS3DObject(img);
+    object.position.set(x * window.galleryParams.sphereRadius, y * window.galleryParams.sphereRadius, z * window.galleryParams.sphereRadius);
+    // Face the center of the sphere (Inwards)
+    object.lookAt(0, 0, 0);
+    img.threeObject = object; // Link DOM element to 3D object for interaction
+    object.userData = { isImage: true, normalizedPos: new THREE.Vector3(x, y, z), radiusScale: 1 };
+
+    sphereGroup.add(object);
   }
 
   // Add Wireframe Rings
@@ -212,7 +253,7 @@ function renderGallery(imageUrls, isInternalReorder = false) {
     el.className = 'wireframe-ring';
     el.style.width = (r * 2) + 'px';
     el.style.height = (r * 2) + 'px';
-    
+
     const obj = new THREE.CSS3DObject(el);
     obj.position.set(0, y, 0);
     obj.rotation.x = Math.PI / 2;
@@ -222,12 +263,12 @@ function renderGallery(imageUrls, isInternalReorder = false) {
   // Longitudes
   for (let i = 0; i < numLon; i++) {
     const theta = Math.PI * i / numLon;
-    
+
     const el = document.createElement('div');
     el.className = 'wireframe-ring';
     el.style.width = (window.galleryParams.sphereRadius * 2) + 'px';
     el.style.height = (window.galleryParams.sphereRadius * 2) + 'px';
-    
+
     const obj = new THREE.CSS3DObject(el);
     obj.position.set(0, 0, 0);
     obj.rotation.y = theta;
@@ -251,16 +292,16 @@ function renderGallery(imageUrls, isInternalReorder = false) {
     p.className = 'particle';
     p.style.animationDelay = Math.random() * 5 + 's';
     wrapper.appendChild(p);
-    
+
     const particleObj = new THREE.CSS3DObject(wrapper);
     particleObj.position.set(x, y, z);
-    particleObj.userData = { normalizedPos: new THREE.Vector3(x/r, y/r, z/r), radiusScale: scaleFactor };
+    particleObj.userData = { normalizedPos: new THREE.Vector3(x / r, y / r, z / r), radiusScale: scaleFactor };
     sphereGroup.add(particleObj);
   }
 }
 
 // Initial Random Images
-const initialImages = Array.from({length: 56}, (_, i) => `https://picsum.photos/seed/${i+10}/300/400`);
+const initialImages = Array.from({ length: 56 }, (_, i) => `https://picsum.photos/seed/${i + 10}/300/400`);
 renderGallery(initialImages);
 
 // --- GUI SETUP ---
@@ -268,7 +309,7 @@ import('https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm').then(({ default: GUI })
   const gui = new GUI();
   gui.add(window.galleryParams, 'rotationSensitivity', 50, 1000).name('Rot Sensitivity');
   gui.add(window.galleryParams, 'smoothingFactor', 0.01, 1.0).name('Smoothing');
-  
+
   const sphereFolder = gui.addFolder('Sphere');
   sphereFolder.add(window.galleryParams, 'sphereRadius', 500, 3000).name('Radius').listen().onChange(() => {
     // Use efficient update instead of full re-render when dragging slider
@@ -295,11 +336,11 @@ import('https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm').then(({ default: GUI })
   sphereFolder.add(window.galleryParams, 'resetCamera').name('Reset Camera');
   sphereFolder.add(window.galleryParams, 'dollyZoom').name('Dolly Zoom FX');
   sphereFolder.add(window.galleryParams, 'exportConfig').name('Save Config to Code');
-  
+
   const controlFolder = gui.addFolder('Control Area');
   const updateBounds = () => {
     const el = document.getElementById('control-bounds');
-    if(el) {
+    if (el) {
       el.style.width = (window.galleryParams.areaWidth * 100) + '%';
       el.style.height = (window.galleryParams.areaHeight * 100) + '%';
     }

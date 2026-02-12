@@ -1,7 +1,42 @@
 /* --- SAVEPOINT 4 --- */
-body { margin: 0; overflow: hidden; background-color: #e0e0e0; background-image: radial-gradient(rgba(85, 85, 85, 0.15) 2px, transparent 2px); background-size: 60px 60px; font-family: sans-serif; }
-#video-container { position: fixed; bottom: 20px; left: 50%; width: 234px; transform: translateX(-50%) scaleX(-1); border-radius: 10px; overflow: hidden; border: 2px solid white; z-index: 100; }
-#canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #e0e0e0;
+  background-image: radial-gradient(rgba(85, 85, 85, 0.15) 2px, transparent 2px);
+  background-size: 60px 60px;
+  font-family: sans-serif;
+}
+
+#video-container {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  width: 240px;
+  aspect-ratio: 16 / 9;
+  transform: translateX(-50%) scaleX(-1);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid white;
+  z-index: 100;
+  background: black;
+}
+
+#video-container video,
+#video-container canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#canvas-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+}
 
 /* Three.js Container */
 #three-container {
@@ -12,7 +47,7 @@ body { margin: 0; overflow: hidden; background-color: #e0e0e0; background-image:
 .image-item {
   position: absolute;
   width: 212.91px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   border-radius: 10px;
   backface-visibility: hidden;
 }
@@ -156,15 +191,21 @@ body.night-mode .particle {
 }
 
 @keyframes floatParticle {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-20px); }
+  0% {
+    transform: translateY(0);
+  }
+
+  100% {
+    transform: translateY(-20px);
+  }
 }
 
 #presentation-controls {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  display: none; /* Hidden by default */
+  display: none;
+  /* Hidden by default */
   gap: 10px;
   z-index: 10001;
 }
@@ -188,4 +229,67 @@ body.night-mode .particle {
 body.presentation-mode .lil-gui.root {
   display: none !important;
 }
+
+/* Mobile Optimization & Landscape Enforcement */
+@media screen and (max-width: 900px) {
+  /* Enforce Landscape on Portrait Screens */
+  @media (orientation: portrait) {
+    body {
+      transform: rotate(90deg);
+      transform-origin: bottom left;
+      position: fixed;
+      width: 100vh;
+      height: 100vw;
+      top: -100vw;
+      left: 0;
+      overflow: hidden;
+    }
+
+    #video-container {
+      /* Reset previous transforms and apply new positioning for 'top right' in landscape (top left visually before rotation) */
+      /* Since body is rotated, coordinate system is rotated.
+         Top-Left of screen (visual) is Bottom-Left of body (logical).
+         Top-Right of screen (visual) is Top-Left of body (logical).
+         Wait, let's trace:
+         Rotate 90deg CW:
+         Visual Top-Right -> Logical Top-Left.
+      */
+      bottom: auto !important;
+      left: auto !important;
+      top: 20px;
+      right: 20px;
+      transform: scaleX(-1) !important;
+      /* Keep mirror, remove centering translate */
+      width: 180px;
+      /* Smaller on mobile */
+    }
+
+    #bento-container {
+      /* Reposition bento grid if needed */
+      width: 220px;
+    }
+  }
+
+  /* Landscape Mobile Adjustments (Native or Forced) */
+  @media (orientation: landscape) {
+    #video-container {
+      /* "Push camera to right top" */
+      bottom: auto;
+      left: auto;
+      top: 20px;
+      right: 20px;
+      transform: scaleX(-1);
+      /* Keep mirror, remove centering */
+      width: 180px;
+    }
+
+    #bento-container {
+      bottom: 20px;
+      left: 20px;
+      /* Move bento to left to balance */
+      right: auto;
+      transform: scale(0.8);
+      transform-origin: bottom left;
+    }
+  }
 }
