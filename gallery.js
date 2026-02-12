@@ -52,19 +52,20 @@ window.optimizeForScreen = () => {
 
     // Adjust Sphere Radius to fit
     // Reduce radius to avoid clipping
-    window.galleryParams.sphereRadius = 900;
-    window.galleryParams.imageScale = 0.8; // Smaller images
+    window.galleryParams.sphereRadius = 800;
+    window.galleryParams.imageScale = 0.6; // Even smaller images
 
     // Adjust Center to fit within bounds
-    // Since we are top-down or landscape in a constrained height
+    // Center logic: 0,0,0 is screen center in CSS3D usually.
+    // If images are glitching, push them back further.
+    window.galleryParams.sphereCenterX = 0;
     window.galleryParams.sphereCenterY = 0;
-    window.galleryParams.sphereCenterZ = -2000; // Pull it closer or further?
-    // If we want it to "not exceed borders", we need it further away or smaller.
-    // -2500 is default.
+    window.galleryParams.sphereCenterZ = -1500; // Closer perspective
   } else {
     // Desktop Defaults
     window.galleryParams.sphereRadius = 1320;
     window.galleryParams.imageScale = 1.0;
+    window.galleryParams.sphereCenterX = 0;
     window.galleryParams.sphereCenterY = -150;
     window.galleryParams.sphereCenterZ = -2500;
   }
@@ -72,6 +73,7 @@ window.optimizeForScreen = () => {
   // Apply changes
   if (window.updateGalleryRadius) window.updateGalleryRadius();
   if (window.mainGroup) {
+    window.mainGroup.position.x = window.galleryParams.sphereCenterX;
     window.mainGroup.position.y = window.galleryParams.sphereCenterY;
     window.mainGroup.position.z = window.galleryParams.sphereCenterZ;
   }

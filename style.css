@@ -13,6 +13,7 @@ body {
   bottom: 20px;
   left: 50%;
   width: 240px;
+  /* Default ratio */
   aspect-ratio: 16 / 9;
   transform: translateX(-50%) scaleX(-1);
   border-radius: 10px;
