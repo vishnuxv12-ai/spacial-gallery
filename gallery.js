@@ -19,7 +19,6 @@ window.galleryParams = {
     gsap.to(window.galleryParams, { cameraZ: 1000, cameraFov: 50, duration: 1.5, ease: "power2.out" });
     gsap.to(window.camera.position, { z: 1000, duration: 1.5, ease: "power2.out", overwrite: true });
     gsap.to(window.camera, { fov: 50, duration: 1.5, ease: "power2.out", onUpdate: () => window.camera.updateProjectionMatrix() });
-    window.optimizeForScreen(); // Re-apply mobile offsets if needed
   },
   dollyZoom: () => {
     const tl = gsap.timeline();
@@ -41,46 +40,6 @@ window.galleryParams = {
   }
 };
 
-// Optimization for Mobile
-window.optimizeForScreen = () => {
-  const isMobile = window.innerWidth < 900 || window.innerHeight < 600;
-  if (isMobile) {
-    // Determine the smaller dimension (accounting for rotation)
-    // If we forced rotation, the visual width is height.
-    // But window.innerWidth refers to the viewport width.
-    // If body is rotated 90deg, visuals are bound by height.
-
-    // Adjust Sphere Radius to fit
-    // In portrait, width is small, height is large.
-    // We need to fit the sphere in the width.
-    window.galleryParams.sphereRadius = 600; // Much smaller for portrait width
-    window.galleryParams.imageScale = 0.55;
-
-    // Adjust Center
-    window.galleryParams.sphereCenterX = 0;
-    window.galleryParams.sphereCenterY = 0;
-    window.galleryParams.sphereCenterZ = -2000; // Push back to see more
-  } else {
-    // Desktop Defaults
-    window.galleryParams.sphereRadius = 1320;
-    window.galleryParams.imageScale = 1.0;
-    window.galleryParams.sphereCenterX = 0;
-    window.galleryParams.sphereCenterY = -150;
-    window.galleryParams.sphereCenterZ = -2500;
-  }
-
-  // Apply changes
-  if (window.updateGalleryRadius) window.updateGalleryRadius();
-  if (window.mainGroup) {
-    window.mainGroup.position.x = window.galleryParams.sphereCenterX;
-    window.mainGroup.position.y = window.galleryParams.sphereCenterY;
-    window.mainGroup.position.z = window.galleryParams.sphereCenterZ;
-  }
-};
-
-// Run optimization immediately
-window.optimizeForScreen();
-window.addEventListener('resize', window.optimizeForScreen);
 
 // --- THREE.JS SETUP ---
 window.scene = new THREE.Scene();
@@ -277,8 +236,7 @@ function renderGallery(imageUrls, isInternalReorder = false) {
   }
 
   // Generate Particles
-  const isMobile = window.innerWidth < 900 || window.innerHeight < 600;
-  const numParticles = isMobile ? 0 : 200;
+  const numParticles = 200;
   for (let i = 0; i < numParticles; i++) {
     const theta = Math.random() * 2 * Math.PI;
     const phi = Math.acos(2 * Math.random() - 1);
@@ -303,9 +261,8 @@ function renderGallery(imageUrls, isInternalReorder = false) {
 }
 
 // Initial Random Images
-const isMobile = window.innerWidth < 900 || window.innerHeight < 600;
-const imageCount = isMobile ? 24 : 56;
-const initialImages = Array.from({ length: imageCount }, (_, i) => `https://picsum.photos/seed/${i + 10}/300/400`);
+// Initial Random Images
+const initialImages = Array.from({ length: 56 }, (_, i) => `https://picsum.photos/seed/${i + 10}/300/400`);
 renderGallery(initialImages);
 
 // --- GUI SETUP ---
