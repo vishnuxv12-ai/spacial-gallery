@@ -51,16 +51,15 @@ window.optimizeForScreen = () => {
     // If body is rotated 90deg, visuals are bound by height.
 
     // Adjust Sphere Radius to fit
-    // Reduce radius to avoid clipping
-    window.galleryParams.sphereRadius = 800;
-    window.galleryParams.imageScale = 0.6; // Even smaller images
+    // In portrait, width is small, height is large.
+    // We need to fit the sphere in the width.
+    window.galleryParams.sphereRadius = 600; // Much smaller for portrait width
+    window.galleryParams.imageScale = 0.55;
 
-    // Adjust Center to fit within bounds
-    // Center logic: 0,0,0 is screen center in CSS3D usually.
-    // If images are glitching, push them back further.
+    // Adjust Center
     window.galleryParams.sphereCenterX = 0;
     window.galleryParams.sphereCenterY = 0;
-    window.galleryParams.sphereCenterZ = -1500; // Closer perspective
+    window.galleryParams.sphereCenterZ = -2000; // Push back to see more
   } else {
     // Desktop Defaults
     window.galleryParams.sphereRadius = 1320;
