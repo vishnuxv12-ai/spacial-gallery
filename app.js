@@ -18,6 +18,8 @@ const fileInput = document.getElementById('file-input');
 const speedSlider = document.getElementById('speed-slider');
 const colorMatchToggle = document.getElementById('color-match-toggle');
 const IMAGE_WIDTH = 212.91;
+const disclaimerPopup = document.getElementById('disclaimer-popup');
+const disclaimerBtn = document.getElementById('disclaimer-cta');
 
 // Panning and rotation state
 let targetRotX = 0; // Pitch
@@ -43,6 +45,20 @@ let radiusModeEnabled = false;
 let presentationModeEnabled = false;
 let nightModeEnabled = false;
 let colorMatchEnabled = false;
+
+// Disclaimer Logic
+if (disclaimerBtn && disclaimerPopup) {
+  // Force display on load to ensure it appears every session
+  disclaimerPopup.style.display = 'flex';
+  disclaimerPopup.style.opacity = '1';
+
+  disclaimerBtn.addEventListener('click', () => {
+    disclaimerPopup.style.opacity = '0';
+    setTimeout(() => {
+      disclaimerPopup.style.display = 'none';
+    }, 500);
+  });
+}
 
 // Toggle Logic
 document.getElementById('cursor-toggle').addEventListener('click', () => {
@@ -325,32 +341,28 @@ function onResults(results) {
         return;
       }
 
-      const elements = child.matrixWorld.elements;
-      const centerZ = elements[14];
-
       if (element.classList.contains('image-item')) {
         child.lookAt(mainGroup.position);
         child.updateMatrixWorld();
-        const A = elements[2]; // dZ/dX
-        const C = sphereCenterZ - centerZ;
-        const halfW = IMAGE_WIDTH / 2;
-        let clipStyle = '';
 
-        if (Math.abs(A) < 0.0001) {
-          clipStyle = C > 0 ? 'inset(0 0 0 0)' : 'inset(0 0 0 100%)';
-        } else {
-          const x_cut = C / A;
-          const p = (x_cut + halfW) / IMAGE_WIDTH;
-          const percent = p * 100;
+        // Get world position elements after update
+        const elements = child.matrixWorld.elements;
+        const centerZ = elements[14];
 
-          if (A > 0) {
-            clipStyle = percent >= 100 ? 'inset(0 0 0 0)' : (percent <= 0 ? 'inset(0 0 0 100%)' : `inset(0 ${100 - percent}% 0 0)`);
-          } else {
-            clipStyle = percent >= 100 ? 'inset(0 0 0 100%)' : (percent <= 0 ? 'inset(0 0 0 0)' : `inset(0 0 0 ${percent}%)`);
-          }
+        // --- VISIBILITY & CLIPPING ---
+        // Replace complex clip-path with a smoother opacity fade to prevent visual glitches.
+        // This also fixes a bug where position was read before the matrix was updated.
+        // Images on the "front" hemisphere (between camera and sphere center) are faded out.
+        const fadeDistance = 500; // The distance over which to fade
+        const distanceToCenterPlane = centerZ - sphereCenterZ; // Positive when in front
+
+        let opacity = 1.0;
+        if (distanceToCenterPlane > 0) { // Image is on the near side, fade it out
+          opacity = 1.0 - (distanceToCenterPlane / fadeDistance);
         }
-        element.style.clipPath = clipStyle;
-        element.style.opacity = 1;
+
+        element.style.opacity = Math.max(0, opacity); // Clamp opacity at 0
+        element.style.clipPath = 'none'; // Remove clipping to prevent glitches
 
         // --- MAGNETIC EFFECT ---
         // Scale up images that are close to the center of the view (XY plane)
