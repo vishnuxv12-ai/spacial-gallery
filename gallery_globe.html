@@ -33,7 +33,6 @@
       justify-content: center;
       align-items: center;
       text-align: center;
-      color: white;
       padding: 20px;
       font-family: sans-serif;
       transition: opacity 0.5s ease;
@@ -46,12 +45,28 @@
       font-size: 2em;
       font-weight: bold;
       cursor: pointer;
-      border-radius: 50px;
+      border-radius: 12px;
       margin-top: 40px;
       transition: transform 0.2s;
     }
     #disclaimer-cta:hover {
       transform: scale(1.05);
+    }
+    .disclaimer-box {
+      width: 100%;
+      max-width: 800px;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #333;
+    }
+    .disclaimer-header {
+      background-color: #cbcbcb;
+      margin-bottom: 15px;
+    }
+    .disclaimer-body {
+      background-color: #e0e0e0;
     }
   </style>
 </head>
@@ -59,10 +74,14 @@
 
   <!-- Disclaimer Popup -->
   <div id="disclaimer-popup">
-    <h1 style="font-size: 3em; font-weight: bold; margin-bottom: 20px;">We only catch feelings… and hand gestures. 👋</h1>
-    <h2 style="font-size: 1.5em; font-weight: normal; margin-bottom: 10px;">The camera helps us recognize your gestures live.<br>We don’t record, store, or replay anything.</h2>
-    <h2 style="font-size: 1.5em; font-weight: normal; font-style: italic; margin-bottom: 40px;">All processing happens in real time during your session only.</h2>
-    <button id="disclaimer-cta">Let’s Roll</button>
+    <div class="disclaimer-box disclaimer-header">
+      <h1 style="font-size: 3em; font-weight: bold; margin: 0;">We only catch feelings… and hand gestures. 👋</h1>
+    </div>
+    <div class="disclaimer-box disclaimer-body">
+      <h2 style="font-size: 1.5em; font-weight: normal; margin-bottom: 10px;">The camera helps us recognize your gestures live.<br>We don’t record, store, or replay anything.</h2>
+      <h2 style="font-size: 1.5em; font-weight: normal; font-style: italic; margin-bottom: 40px;">All processing happens in real time during your session only.</h2>
+      <button id="disclaimer-cta">Let’s Roll</button>
+    </div>
   </div>
 
   <!-- Small webcam preview -->
