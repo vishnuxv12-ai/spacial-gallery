@@ -276,7 +276,8 @@ function renderGallery(imageUrls, isInternalReorder = false) {
   }
 
   // Generate Particles
-  const numParticles = 200;
+  const isMobile = window.innerWidth < 900 || window.innerHeight < 600;
+  const numParticles = isMobile ? 0 : 200;
   for (let i = 0; i < numParticles; i++) {
     const theta = Math.random() * 2 * Math.PI;
     const phi = Math.acos(2 * Math.random() - 1);
@@ -301,7 +302,9 @@ function renderGallery(imageUrls, isInternalReorder = false) {
 }
 
 // Initial Random Images
-const initialImages = Array.from({ length: 56 }, (_, i) => `https://picsum.photos/seed/${i + 10}/300/400`);
+const isMobile = window.innerWidth < 900 || window.innerHeight < 600;
+const imageCount = isMobile ? 24 : 56;
+const initialImages = Array.from({ length: imageCount }, (_, i) => `https://picsum.photos/seed/${i + 10}/300/400`);
 renderGallery(initialImages);
 
 // --- GUI SETUP ---

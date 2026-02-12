@@ -152,7 +152,7 @@ colorMatchToggle.addEventListener('click', async () => {
   colorMatchToggle.innerText = colorMatchEnabled ? 'Processing...' : 'Color Match: OFF';
   colorMatchToggle.style.background = colorMatchEnabled ? '#4CAF50' : 'white';
   colorMatchToggle.style.color = colorMatchEnabled ? 'white' : 'black';
-  
+
   if (colorMatchEnabled) {
     await toggleColorSort(true);
     colorMatchToggle.innerText = 'Color Match: ON';
@@ -179,7 +179,7 @@ fileInput.addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
     const imageUrls = files.map(f => URL.createObjectURL(f));
     renderGallery(imageUrls);
-    
+
     // Reset Color Match
     colorMatchEnabled = false;
     colorMatchToggle.innerText = 'Color Match: OFF';
@@ -204,8 +204,8 @@ function onResults(results) {
     const index = hand[8];
 
     // Draw hand rig: White lines, Black joints
-    drawConnectors(canvasCtx, hand, HAND_CONNECTIONS, {color: '#FFFFFF', lineWidth: 2});
-    drawLandmarks(canvasCtx, hand, {color: '#000000', lineWidth: 1, radius: 3});
+    drawConnectors(canvasCtx, hand, HAND_CONNECTIONS, { color: '#FFFFFF', lineWidth: 2 });
+    drawLandmarks(canvasCtx, hand, { color: '#000000', lineWidth: 1, radius: 3 });
 
     // Calculate midpoint between thumb and index for movement
     const midX = (thumb.x + index.x) / 2;
@@ -213,7 +213,7 @@ function onResults(results) {
 
     // CALC ZOOM: Distance between thumb and index
     const distance = Math.hypot(index.x - thumb.x, index.y - thumb.y);
-    
+
     // Use pinch gesture to control zoom OR radius
     if (lastPinchDist > 0) {
       const delta = distance - lastPinchDist;
@@ -227,7 +227,7 @@ function onResults(results) {
       }
     }
     lastPinchDist = distance;
-    
+
     // CALC ROTATION: Use the pinch midpoint to rotate the scene
     // Split screen logic: Map left/right halves to full range
     let effectiveX;
@@ -236,7 +236,7 @@ function onResults(results) {
     } else {
       effectiveX = midX;
     }
-    
+
     // Apply Control Area Scaling & Clamping
     // Normalize the input relative to the defined area
     let dx = (effectiveX - 0.5) / window.galleryParams.areaWidth;
@@ -248,7 +248,7 @@ function onResults(results) {
 
     const handRotY = dx * -window.galleryParams.rotationSensitivity;
     const handRotX = dy * -window.galleryParams.rotationSensitivity;
-    
+
     if (!wasHandDetected) {
       baseRotY = targetRotY - handRotY;
       baseRotX = targetRotX - handRotX;
@@ -259,12 +259,12 @@ function onResults(results) {
     // UPDATE CURSOR
     if (cursorEnabled && !presentationModeEnabled) {
       cursor.style.display = 'block';
-      
+
       const targetCursorX = 1 - effectiveX;
       const targetCursorY = midY;
       cursorX += (targetCursorX - cursorX) * window.galleryParams.smoothingFactor;
       cursorY += (targetCursorY - cursorY) * window.galleryParams.smoothingFactor;
-      
+
       cursor.style.left = (cursorX * 100) + '%';
       cursor.style.top = (cursorY * 100) + '%';
     }
@@ -273,10 +273,10 @@ function onResults(results) {
   } else {
     lastPinchDist = -1;
     cursor.style.display = 'none';
-    
+
     // Auto-rotate when no hand is detected
     wasHandDetected = false;
-    
+
     if (window.galleryParams.autoRotateX) {
       targetRotX += window.galleryParams.autoRotateSpeed;
     }
@@ -306,7 +306,7 @@ function onResults(results) {
   // Mouse Parallax
   mouseX += (targetMouseX - mouseX) * 0.05;
   mouseY += (targetMouseY - mouseY) * 0.05;
-  
+
   // Apply Parallax to Camera
   camera.position.x = mouseX * 100;
   camera.position.y = mouseY * 100;
@@ -330,6 +330,10 @@ function onResults(results) {
   mainGroup.updateMatrixWorld();
 
   const updateVisibility = (group) => {
+    // Current Sphere Radius for adaptive fading
+    const currentRadius = window.galleryParams.sphereRadius || 1320;
+    const fadeDistance = currentRadius * 0.4; // Scale fade distance with radius
+
     group.children.forEach(child => {
       const element = child.element;
 
@@ -337,7 +341,10 @@ function onResults(results) {
         child.lookAt(camera.position);
         child.updateMatrixWorld();
         const centerZ = child.matrixWorld.elements[14];
-        element.style.opacity = centerZ < sphereCenterZ ? 1 : 0;
+        const isVisible = centerZ < sphereCenterZ;
+        element.style.opacity = isVisible ? 1 : 0;
+        // Optimization: hide completely if not visible
+        element.style.visibility = isVisible ? 'visible' : 'hidden';
         return;
       }
 
@@ -353,26 +360,41 @@ function onResults(results) {
         // Replace complex clip-path with a smoother opacity fade to prevent visual glitches.
         // This also fixes a bug where position was read before the matrix was updated.
         // Images on the "front" hemisphere (between camera and sphere center) are faded out.
-        const fadeDistance = 500; // The distance over which to fade
+
         const distanceToCenterPlane = centerZ - sphereCenterZ; // Positive when in front
 
         let opacity = 1.0;
-        if (distanceToCenterPlane > 0) { // Image is on the near side, fade it out
-          opacity = 1.0 - (distanceToCenterPlane / fadeDistance);
+        // Add slight hysteresis/offset to prevent flickering at the exact boundary
+        if (distanceToCenterPlane > -50) {
+          // Start fading slightly before the center plane to smooth the transition
+          // Normalize fade based on reduced radius
+          opacity = 1.0 - ((distanceToCenterPlane + 50) / fadeDistance);
         }
 
-        element.style.opacity = Math.max(0, opacity); // Clamp opacity at 0
+        opacity = Math.max(0, Math.min(1, opacity));
+
+        // Performance: Use visibility hidden for fully transparent items
+        if (opacity <= 0.01) {
+          if (element.style.visibility !== 'hidden') element.style.visibility = 'hidden';
+        } else {
+          if (element.style.visibility !== 'visible') element.style.visibility = 'visible';
+          element.style.opacity = opacity;
+        }
+
         element.style.clipPath = 'none'; // Remove clipping to prevent glitches
 
         // --- MAGNETIC EFFECT ---
         // Scale up images that are close to the center of the view (XY plane)
         const baseScale = window.galleryParams.imageScale || 1.0;
-        const distXY = Math.sqrt(elements[12] * elements[12] + elements[13] * elements[13]);
-        let scale = baseScale;
-        if (distXY < 350) { // 350px radius for magnetic effect
-           scale = baseScale + (1 - distXY / 350) * 0.3; // Add magnetic boost
+        // Only apply costly sqrt if visible
+        if (opacity > 0) {
+          const distXY = Math.sqrt(elements[12] * elements[12] + elements[13] * elements[13]);
+          let scale = baseScale;
+          if (distXY < 350) { // 350px radius for magnetic effect
+            scale = baseScale + (1 - distXY / 350) * 0.3; // Add magnetic boost
+          }
+          child.scale.set(scale, scale, scale);
         }
-        child.scale.set(scale, scale, scale);
       }
     });
   };
@@ -383,9 +405,11 @@ function onResults(results) {
   canvasCtx.restore();
 }
 
-const hands = new Hands({locateFile: (file) => {
-  return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-}});
+const hands = new Hands({
+  locateFile: (file) => {
+    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+  }
+});
 hands.setOptions({
   maxNumHands: 1,
   modelComplexity: 1,
@@ -397,7 +421,7 @@ hands.onResults(onResults);
 
 const mpCamera = new Camera(videoElement, {
   onFrame: async () => {
-    await hands.send({image: videoElement});
+    await hands.send({ image: videoElement });
   },
   width: 1280,
   height: 720
