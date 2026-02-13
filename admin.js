@@ -34,8 +34,9 @@ console.log('Admin Script Loaded');
               <input type="file" id="admin-file-input" multiple accept="image/*">
             </label>
             <span id="admin-count">0 Images</span>
-            <div style="display: flex; gap: 5px;">
-                <button id="admin-compress-btn" class="btn" style="background:#ff9800;">⚡ Optimize All</button>
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button id="admin-delete-all-btn" class="btn" style="background:#ff4444; color:white; border:none;">🗑️ Delete All</button>
+                <button id="admin-compress-btn" class="btn" style="background:#ff9800; color:white; border:none;">⚡ Optimize All</button>
                 <button id="admin-save-btn" class="primary-btn">💾 Save Changes</button>
             </div>
           </div>
@@ -57,6 +58,7 @@ console.log('Admin Script Loaded');
         document.getElementById('admin-file-input').addEventListener('change', handleUpload);
         document.getElementById('admin-save-btn').addEventListener('click', handleSave);
         document.getElementById('admin-compress-btn').addEventListener('click', handleCompressAll);
+        document.getElementById('admin-delete-all-btn').addEventListener('click', handleDeleteAll);
     };
 
     // --- LOGIC ---
@@ -176,6 +178,15 @@ console.log('Admin Script Loaded');
                 };
             };
         });
+    };
+
+    const handleDeleteAll = () => {
+        if (currentImages.length === 0) return;
+
+        if (confirm(`Are you sure you want to delete ALL ${currentImages.length} images? This cannot be undone until you save.`)) {
+            currentImages = [];
+            renderGrid();
+        }
     };
 
     const handleCompressAll = async () => {
