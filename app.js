@@ -362,10 +362,19 @@ function onResults(results) {
 
         // Performance: Use visibility hidden for fully transparent items
         if (opacity <= 0.01) {
-          if (element.style.visibility !== 'hidden') element.style.visibility = 'hidden';
+          if (element.style.visibility !== 'hidden') {
+            element.style.visibility = 'hidden';
+            element.style.opacity = 0;
+          }
         } else {
           if (element.style.visibility !== 'visible') element.style.visibility = 'visible';
-          element.style.opacity = opacity;
+
+          // Throttling: Only update opacity if changed significantly to avoid layout thrashing
+          const lastOpacity = element._lastOpacity || -1;
+          if (Math.abs(opacity - lastOpacity) > 0.02 || opacity === 1 || opacity === 0) {
+            element.style.opacity = opacity;
+            element._lastOpacity = opacity;
+          }
         }
 
         element.style.clipPath = 'none'; // Remove clipping to prevent glitches
