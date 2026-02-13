@@ -301,6 +301,24 @@ import('https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm').then(({ default: GUI })
   sphereFolder.add(window.galleryParams, 'dollyZoom').name('Dolly Zoom FX');
   sphereFolder.add(window.galleryParams, 'exportConfig').name('Save Config to Code');
 
+  // Performance: Use visibility hidden for fully transparent items
+  if (opacity <= 0.01) {
+    if (element.style.visibility !== 'hidden') {
+      element.style.visibility = 'hidden';
+      element.style.opacity = 0;
+    }
+  } else {
+    if (element.style.visibility !== 'visible') element.style.visibility = 'visible';
+
+    // Throttling: Only update opacity if changed significantly to avoid layout thrashing
+    const lastOpacity = element._lastOpacity || -1;
+    if (Math.abs(opacity - lastOpacity) > 0.02 || opacity === 1 || opacity === 0) {
+      element.style.opacity = opacity;
+      element._lastOpacity = opacity;
+    }
+  }
+
+  element.style.clipPath = 'none'; // Remove clipping to prevent glitches
   const controlFolder = gui.addFolder('Control Area');
   const updateBounds = () => {
     const el = document.getElementById('control-bounds');

@@ -5,8 +5,8 @@ console.log('Admin Script Loaded');
     let currentImages = [];
 
     // --- CONFIG ---
-    const MAX_IMAGE_WIDTH = 800;
-    const JPEG_QUALITY = 0.7;
+    const MAX_IMAGE_WIDTH = 600; // Reduced from 800 for better performance
+    const JPEG_QUALITY = 0.6; // Reduced from 0.7
 
     // --- UI ELEMENTS ---
     const createAdminUI = () => {

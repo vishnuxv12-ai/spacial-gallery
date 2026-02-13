@@ -48,6 +48,8 @@ body {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   border-radius: 10px;
   backface-visibility: hidden;
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
 }
 
 #hand-cursor {
@@ -180,6 +182,7 @@ body.night-mode .image-item {
   border-radius: 50%;
   opacity: 0;
   transition: opacity 1s;
+  will-change: transform, opacity;
 }
 
 body.night-mode .particle {
