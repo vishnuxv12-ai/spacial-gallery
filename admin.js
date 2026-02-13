@@ -57,6 +57,16 @@ console.log('Admin Script Loaded');
 
     // --- LOGIC ---
 
+    // Check for URL Parameter to enable Admin Button
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAdminParam = urlParams.get('admin') === 'true';
+
+    // Auto-show button if param is present
+    if (isAdminParam) {
+        const btn = document.getElementById('admin-toggle-btn');
+        if (btn) btn.style.display = 'block';
+    }
+
     window.toggleAdmin = () => {
         const overlay = document.getElementById('admin-overlay');
         if (!overlay) createAdminUI();
