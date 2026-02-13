@@ -246,6 +246,18 @@ const initialImages = (window.galleryData && window.galleryData.images && window
 
 renderGallery(initialImages);
 
+// Dismiss Loading Screen
+window.addEventListener('load', () => {
+  const loader = document.getElementById('loading-overlay');
+  if (loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => {
+      loader.style.visibility = 'hidden';
+      loader.style.display = 'none'; // Ensure it's gone
+    }, 500);
+  }
+});
+
 // --- GUI SETUP ---
 import('https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm').then(({ default: GUI }) => {
   const gui = new GUI();

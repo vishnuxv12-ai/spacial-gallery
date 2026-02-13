@@ -351,21 +351,14 @@ function onResults(results) {
 
         opacity = Math.max(0, Math.min(1, opacity));
 
-        // Performance: Use visibility hidden for fully transparent items
-        if (opacity <= 0.01) {
-          if (element.style.visibility !== 'hidden') {
-            element.style.visibility = 'hidden';
-            element.style.opacity = 0;
-          }
-        } else {
-          if (element.style.visibility !== 'visible') element.style.visibility = 'visible';
+        // Performance: Skip visibility toggling to prevent glitches
+        // Just rely on opacity. Browsers handle opacity: 0 efficienty enough.
 
-          // Throttling: Only update opacity if changed significantly to avoid layout thrashing
-          const lastOpacity = element._lastOpacity || -1;
-          if (Math.abs(opacity - lastOpacity) > 0.02 || opacity === 1 || opacity === 0) {
-            element.style.opacity = opacity;
-            element._lastOpacity = opacity;
-          }
+        // Throttling: Only update opacity if changed significantly
+        const lastOpacity = element._lastOpacity || -1;
+        if (Math.abs(opacity - lastOpacity) > 0.02 || opacity === 1 || opacity === 0) {
+          element.style.opacity = opacity;
+          element._lastOpacity = opacity;
         }
 
         element.style.clipPath = 'none'; // Remove clipping to prevent glitches
