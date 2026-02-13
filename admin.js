@@ -34,14 +34,17 @@ console.log('Admin Script Loaded');
               <input type="file" id="admin-file-input" multiple accept="image/*">
             </label>
             <span id="admin-count">0 Images</span>
-            <button id="admin-save-btn" class="primary-btn">💾 Save Changes (Permanent)</button>
+            <div style="display: flex; gap: 5px;">
+                <button id="admin-compress-btn" class="btn" style="background:#ff9800;">⚡ Optimize All</button>
+                <button id="admin-save-btn" class="primary-btn">💾 Save Changes</button>
+            </div>
           </div>
           
           <div id="admin-grid" class="admin-grid">
             <!-- Images will be rendered here -->
           </div>
           <div class="admin-footer">
-            <p><strong>Note:</strong> "Save Changes" will download a new 'gallery-data.js'. Replace the file in your project folder to make changes permanent.</p>
+            <p><strong>Note:</strong> "Optimize All" will re-compress all images to improve performance. Remember to "Save Changes" after.</p>
           </div>
         </div>
       </div>
@@ -53,6 +56,7 @@ console.log('Admin Script Loaded');
         document.getElementById('admin-login-btn').addEventListener('click', handleLogin);
         document.getElementById('admin-file-input').addEventListener('change', handleUpload);
         document.getElementById('admin-save-btn').addEventListener('click', handleSave);
+        document.getElementById('admin-compress-btn').addEventListener('click', handleCompressAll);
     };
 
     // --- LOGIC ---
@@ -171,6 +175,68 @@ console.log('Admin Script Loaded');
                     resolve(dataUrl);
                 };
             };
+        });
+    };
+
+    const handleCompressAll = async () => {
+        const btn = document.getElementById('admin-compress-btn');
+        const originalText = btn.innerText;
+        btn.innerText = 'Compressing...';
+        btn.disabled = true;
+
+        const optimizedImages = [];
+        for (let i = 0; i < currentImages.length; i++) {
+            // Update progress
+            btn.innerText = `Compressing ${i + 1}/${currentImages.length}`;
+            try {
+                // Determine if it's already a base64 string or a URL
+                // We re-compress everything to ensure uniform size/quality
+                const newBase64 = await recompressImage(currentImages[i]);
+                optimizedImages.push(newBase64);
+            } catch (e) {
+                console.error("Failed to compress image index " + i, e);
+                optimizedImages.push(currentImages[i]); // Keep original if fail
+            }
+        }
+
+        currentImages = optimizedImages;
+        renderGrid();
+
+        btn.innerText = 'Done!';
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }, 2000);
+
+        alert('Optimization Complete! Click "Save Changes" to download the smaller file.');
+    };
+
+    const recompressImage = (src) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = src;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Resize if needed
+                if (width > MAX_IMAGE_WIDTH) {
+                    height = Math.round(height * (MAX_IMAGE_WIDTH / width));
+                    width = MAX_IMAGE_WIDTH;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Compress heavily for performance
+                const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+                resolve(dataUrl);
+            };
+            img.onerror = (e) => reject(e);
         });
     };
 

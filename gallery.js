@@ -235,29 +235,7 @@ function renderGallery(imageUrls, isInternalReorder = false) {
     gridGroup.add(obj);
   }
 
-  // Generate Particles
-  const numParticles = 200;
-  for (let i = 0; i < numParticles; i++) {
-    const theta = Math.random() * 2 * Math.PI;
-    const phi = Math.acos(2 * Math.random() - 1);
-    const scaleFactor = 0.6 + Math.random() * 0.8;
-    const r = window.galleryParams.sphereRadius * scaleFactor;
-    const x = r * Math.sin(phi) * Math.cos(theta);
-    const y = r * Math.sin(phi) * Math.sin(theta);
-    const z = r * Math.cos(phi);
-    const wrapper = document.createElement('div');
-    wrapper.className = 'particle-wrapper';
-    wrapper.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
-    const p = document.createElement('div');
-    p.className = 'particle';
-    p.style.animationDelay = Math.random() * 5 + 's';
-    wrapper.appendChild(p);
 
-    const particleObj = new THREE.CSS3DObject(wrapper);
-    particleObj.position.set(x, y, z);
-    particleObj.userData = { normalizedPos: new THREE.Vector3(x / r, y / r, z / r), radiusScale: scaleFactor };
-    sphereGroup.add(particleObj);
-  }
 }
 
 // Initial Random Images

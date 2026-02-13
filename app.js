@@ -324,16 +324,7 @@ function onResults(results) {
     group.children.forEach(child => {
       const element = child.element;
 
-      if (element.classList.contains('particle-wrapper')) {
-        child.lookAt(camera.position);
-        child.updateMatrixWorld();
-        const centerZ = child.matrixWorld.elements[14];
-        const isVisible = centerZ < sphereCenterZ;
-        element.style.opacity = isVisible ? 1 : 0;
-        // Optimization: hide completely if not visible
-        element.style.visibility = isVisible ? 'visible' : 'hidden';
-        return;
-      }
+
 
       if (element.classList.contains('image-item')) {
         child.lookAt(mainGroup.position);

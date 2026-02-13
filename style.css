@@ -170,36 +170,7 @@ body.night-mode .image-item {
   box-shadow: 0 0 20px rgba(100, 200, 255, 0.6);
 }
 
-.particle-wrapper {
-  position: absolute;
-  pointer-events: none;
-}
 
-.particle {
-  width: 4px;
-  height: 4px;
-  background: white;
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 1s;
-  will-change: transform, opacity;
-}
-
-body.night-mode .particle {
-  opacity: 0.6;
-  box-shadow: 0 0 6px white;
-  animation: floatParticle 4s infinite ease-in-out alternate;
-}
-
-@keyframes floatParticle {
-  0% {
-    transform: translateY(0);
-  }
-
-  100% {
-    transform: translateY(-20px);
-  }
-}
 
 #presentation-controls {
   position: fixed;
