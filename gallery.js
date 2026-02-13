@@ -1,14 +1,14 @@
 // --- SAVEPOINT 4 ---
 window.galleryParams = {
-  rotationSensitivity: 315,
+  rotationSensitivity: 346.5,
   sphereRadius: 1320,
   sphereCenterX: 0,
   sphereCenterY: -150,
   sphereCenterZ: -2500,
-  smoothingFactor: 0.15,
+  smoothingFactor: 0.165,
   autoRotateX: false,
   autoRotateY: true,
-  autoRotateSpeed: 0.2,
+  autoRotateSpeed: 0.22,
   imageScale: 1.0,
   cameraZ: 1000,
   cameraZoomSpeed: 1.5,
