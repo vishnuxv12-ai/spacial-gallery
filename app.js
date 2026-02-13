@@ -4,7 +4,7 @@ const videoContainer = document.getElementById('video-container');
 const canvasElement = document.getElementById('output_canvas');
 const canvasCtx = canvasElement.getContext('2d');
 const cursor = document.getElementById('hand-cursor');
-const uploadBtn = document.getElementById('upload-btn');
+// const uploadBtn = document.getElementById('upload-btn');
 const splitToggle = document.getElementById('split-toggle');
 const boundsToggle = document.getElementById('bounds-toggle');
 const controlBounds = document.getElementById('control-bounds');
@@ -171,22 +171,9 @@ speedSlider.addEventListener('input', (e) => {
   window.galleryParams.autoRotateSpeed = parseFloat(e.target.value);
 });
 
-// Upload Logic
-uploadBtn.addEventListener('click', () => fileInput.click());
-
-fileInput.addEventListener('change', (e) => {
-  if (e.target.files.length > 0) {
-    const files = Array.from(e.target.files);
-    const imageUrls = files.map(f => URL.createObjectURL(f));
-    renderGallery(imageUrls);
-
-    // Reset Color Match
-    colorMatchEnabled = false;
-    colorMatchToggle.innerText = 'Color Match: OFF';
-    colorMatchToggle.style.background = 'white';
-    colorMatchToggle.style.color = 'black';
-  }
-});
+// Upload Logic Removed (Replaced by Admin Interface)
+// const uploadBtn = document.getElementById('upload-btn');
+// ... legacy code removed ...
 
 // 2. HAND TRACKING LOGIC
 function onResults(results) {

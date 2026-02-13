@@ -261,8 +261,11 @@ function renderGallery(imageUrls, isInternalReorder = false) {
 }
 
 // Initial Random Images
-// Initial Random Images
-const initialImages = Array.from({ length: 56 }, (_, i) => `https://picsum.photos/seed/${i + 10}/300/400`);
+// Initial Images from Data Module
+const initialImages = (window.galleryData && window.galleryData.images && window.galleryData.images.length > 0)
+  ? window.galleryData.images
+  : Array.from({ length: 56 }, (_, i) => `https://picsum.photos/seed/${i + 10}/300/400`);
+
 renderGallery(initialImages);
 
 // --- GUI SETUP ---

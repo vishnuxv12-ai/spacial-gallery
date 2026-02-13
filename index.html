@@ -14,6 +14,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="admin.css">
   <style>
     /* Ensure lil-gui stays on left */
     .lil-gui.root {
@@ -150,7 +151,7 @@
     <!-- Actions -->
     <div class="bento-item span-2 grid-2-col">
       <button id="color-match-toggle">Color Match: OFF</button>
-      <button id="upload-btn">Upload Images</button>
+      <button id="admin-toggle-btn" onclick="toggleAdmin()">Admin Panel</button>
     </div>
 
     <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
@@ -167,6 +168,8 @@
     <!-- Three.js renderer will be appended here -->
   </div>
 
+  <script src="gallery-data.js"></script>
+  <script src="admin.js"></script>
   <script src="gallery.js"></script>
   <script src="audio.js"></script>
   <script src="app.js"></script>
