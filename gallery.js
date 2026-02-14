@@ -3,7 +3,7 @@ window.galleryParams = {
   rotationSensitivity: 346.5,
   sphereRadius: 1320,
   sphereCenterX: 0,
-  sphereCenterY: 32,
+  sphereCenterY: -150,
   sphereCenterZ: -2500,
   smoothingFactor: 0.165,
   autoRotateX: false,
@@ -201,8 +201,39 @@ function renderGallery(imageUrls, isInternalReorder = false) {
     sphereGroup.add(object);
   }
 
-  // Wireframe generation removed for performance optimization.
-  // The grid was hidden by default and adding unused DOM nodes slows down the renderer.
+  // Add Wireframe Rings
+
+  // Latitudes
+  for (let i = 1; i < numLat; i++) {
+    const phi = Math.PI * i / numLat;
+    const r = window.galleryParams.sphereRadius * Math.sin(phi);
+    const y = window.galleryParams.sphereRadius * Math.cos(phi);
+
+    const el = document.createElement('div');
+    el.className = 'wireframe-ring';
+    el.style.width = (r * 2) + 'px';
+    el.style.height = (r * 2) + 'px';
+
+    const obj = new THREE.CSS3DObject(el);
+    obj.position.set(0, y, 0);
+    obj.rotation.x = Math.PI / 2;
+    gridGroup.add(obj);
+  }
+
+  // Longitudes
+  for (let i = 0; i < numLon; i++) {
+    const theta = Math.PI * i / numLon;
+
+    const el = document.createElement('div');
+    el.className = 'wireframe-ring';
+    el.style.width = (window.galleryParams.sphereRadius * 2) + 'px';
+    el.style.height = (window.galleryParams.sphereRadius * 2) + 'px';
+
+    const obj = new THREE.CSS3DObject(el);
+    obj.position.set(0, 0, 0);
+    obj.rotation.y = theta;
+    gridGroup.add(obj);
+  }
 
 
 }

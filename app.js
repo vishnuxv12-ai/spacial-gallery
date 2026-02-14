@@ -5,15 +5,15 @@ const canvasElement = document.getElementById('output_canvas');
 const canvasCtx = canvasElement.getContext('2d');
 const cursor = document.getElementById('hand-cursor');
 // const uploadBtn = document.getElementById('upload-btn');
-// const splitToggle = document.getElementById('split-toggle');
-// const boundsToggle = document.getElementById('bounds-toggle');
-// const controlBounds = document.getElementById('control-bounds');
-// const radiusToggle = document.getElementById('radius-toggle');
+const splitToggle = document.getElementById('split-toggle');
+const boundsToggle = document.getElementById('bounds-toggle');
+const controlBounds = document.getElementById('control-bounds');
+const radiusToggle = document.getElementById('radius-toggle');
 const presentationToggle = document.getElementById('presentation-toggle');
 const presentationControls = document.getElementById('presentation-controls');
 const exitPresentationBtn = document.getElementById('exit-presentation');
 const toggleCameraPresentationBtn = document.getElementById('toggle-camera-presentation');
-// const nightModeToggle = document.getElementById('night-mode-toggle');
+const nightModeToggle = document.getElementById('night-mode-toggle');
 const fileInput = document.getElementById('file-input');
 const speedSlider = document.getElementById('speed-slider');
 const colorMatchToggle = document.getElementById('color-match-toggle');
@@ -39,7 +39,11 @@ let cursorEnabled = true;
 let baseRotY = -.02;
 let baseRotX = 0;
 let wasHandDetected = false;
+let splitScreenEnabled = false;
+let boundsVisible = false;
+let radiusModeEnabled = false;
 let presentationModeEnabled = false;
+let nightModeEnabled = false;
 let colorMatchEnabled = false;
 
 // Disclaimer Logic
@@ -57,10 +61,33 @@ if (disclaimerBtn && disclaimerPopup) {
 }
 
 // Toggle Logic
-// Toggle Logic
 document.getElementById('cursor-toggle').addEventListener('click', () => {
   cursorEnabled = !cursorEnabled;
   if (!cursorEnabled) cursor.style.display = 'none';
+});
+
+splitToggle.addEventListener('click', () => {
+  splitScreenEnabled = !splitScreenEnabled;
+  splitToggle.innerText = splitScreenEnabled ? 'Split: ON' : 'Split: OFF';
+  splitToggle.style.background = splitScreenEnabled ? 'white' : '#ddd';
+});
+
+boundsToggle.addEventListener('click', () => {
+  boundsVisible = !boundsVisible;
+  boundsToggle.innerText = boundsVisible ? 'Bounds: ON' : 'Bounds: OFF';
+  boundsToggle.style.background = boundsVisible ? '#4CAF50' : '#ddd';
+  boundsToggle.style.color = boundsVisible ? 'white' : 'black';
+  controlBounds.style.display = boundsVisible ? 'block' : 'none';
+  // Sync initial size
+  controlBounds.style.width = (window.galleryParams.areaWidth * 100) + '%';
+  controlBounds.style.height = (window.galleryParams.areaHeight * 100) + '%';
+});
+
+radiusToggle.addEventListener('click', () => {
+  radiusModeEnabled = !radiusModeEnabled;
+  radiusToggle.innerText = radiusModeEnabled ? 'Radius: ON' : 'Radius: OFF';
+  radiusToggle.style.background = radiusModeEnabled ? '#4CAF50' : '#ddd';
+  radiusToggle.style.color = radiusModeEnabled ? 'white' : 'black';
 });
 
 presentationToggle.addEventListener('click', () => {
@@ -97,6 +124,7 @@ function togglePresentationMode(active) {
     bento.style.display = 'none';
     if (gui) gui.style.display = 'none';
     cursor.style.display = 'none';
+    controlBounds.style.display = 'none';
     if (videoContainer) videoContainer.style.display = 'none';
     presentationControls.style.display = 'flex';
     toggleCameraPresentationBtn.style.background = 'rgba(255, 255, 255, 0.2)';
@@ -105,12 +133,20 @@ function togglePresentationMode(active) {
     bento.style.display = 'grid';
     if (gui) gui.style.display = 'block';
     if (cursorEnabled) cursor.style.display = 'block';
+    if (boundsVisible) controlBounds.style.display = 'block';
     if (videoContainer) videoContainer.style.display = 'block';
     presentationControls.style.display = 'none';
   }
 }
 
-// Color Match Default: ON
+nightModeToggle.addEventListener('click', () => {
+  nightModeEnabled = !nightModeEnabled;
+  document.body.classList.toggle('night-mode');
+  nightModeToggle.innerText = nightModeEnabled ? 'Night Mode: ON' : 'Night Mode: OFF';
+  nightModeToggle.style.background = nightModeEnabled ? '#333' : 'white';
+  nightModeToggle.style.color = nightModeEnabled ? 'white' : 'black';
+});
+
 colorMatchToggle.addEventListener('click', async () => {
   colorMatchEnabled = !colorMatchEnabled;
   colorMatchToggle.innerText = colorMatchEnabled ? 'Processing...' : 'Color Match: OFF';
@@ -124,17 +160,6 @@ colorMatchToggle.addEventListener('click', async () => {
     toggleColorSort(false);
   }
 });
-
-// Init Color Match
-(async () => {
-  colorMatchEnabled = true;
-  colorMatchToggle.innerText = 'Processing...';
-  colorMatchToggle.style.background = '#4CAF50';
-  colorMatchToggle.style.color = 'white';
-  // Wait for validation/loading if needed, but safe to call
-  await toggleColorSort(true);
-  colorMatchToggle.innerText = 'Color Match: ON';
-})();
 
 document.addEventListener('mousemove', (e) => {
   targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
@@ -177,16 +202,27 @@ function onResults(results) {
     const distance = Math.hypot(index.x - thumb.x, index.y - thumb.y);
 
     // Use pinch gesture to control zoom OR radius
-    // Use pinch gesture to control zoom
     if (lastPinchDist > 0) {
       const delta = distance - lastPinchDist;
-      // Add momentum to zoom (Ease in/out)
-      zoomVelocity += delta * 3150;
+      if (radiusModeEnabled) {
+        window.galleryParams.sphereRadius += delta * 2000;
+        window.galleryParams.sphereRadius = Math.max(500, Math.min(3000, window.galleryParams.sphereRadius));
+        window.updateGalleryRadius();
+      } else {
+        // Add momentum to zoom (Ease in/out)
+        zoomVelocity += delta * 3000;
+      }
     }
     lastPinchDist = distance;
 
     // CALC ROTATION: Use the pinch midpoint to rotate the scene
-    let effectiveX = midX;
+    // Split screen logic: Map left/right halves to full range
+    let effectiveX;
+    if (splitScreenEnabled) {
+      effectiveX = midX < 0.5 ? midX * 2 : (midX - 0.5) * 2;
+    } else {
+      effectiveX = midX;
+    }
 
     // Apply Control Area Scaling & Clamping
     // Normalize the input relative to the defined area
@@ -291,10 +327,7 @@ function onResults(results) {
 
 
       if (element.classList.contains('image-item')) {
-        // PERF: Removed child.lookAt(mainGroup.position). 
-        // Images are static relative to the sphere group, so we don't need to re-orient them every frame.
-
-        // We only need the world position for opacity calculations.
+        child.lookAt(mainGroup.position);
         child.updateMatrixWorld();
 
         // Get world position elements after update
