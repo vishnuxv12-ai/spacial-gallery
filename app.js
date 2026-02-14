@@ -44,7 +44,7 @@ let boundsVisible = false;
 let radiusModeEnabled = false;
 let presentationModeEnabled = false;
 let nightModeEnabled = false;
-let colorMatchEnabled = false;
+let colorMatchEnabled = true;
 
 // Disclaimer Logic
 if (disclaimerBtn && disclaimerPopup) {
@@ -372,3 +372,16 @@ animate();
 
 // Start in Presentation Mode
 togglePresentationMode(true);
+
+// Initialize Color Match
+if (colorMatchEnabled) {
+  colorMatchToggle.innerText = 'Color Match: ON';
+  colorMatchToggle.style.background = '#4CAF50';
+  colorMatchToggle.style.color = 'white';
+  // Wait for gallery to be ready
+  setTimeout(() => {
+    if (typeof toggleColorSort === 'function') {
+      toggleColorSort(true);
+    }
+  }, 100);
+}
