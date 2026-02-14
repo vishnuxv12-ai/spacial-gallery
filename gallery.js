@@ -142,7 +142,7 @@ async function sortImagesByColor(urls) {
     }));
     results.push(...batchResults);
   }
-  
+
   results.sort((a, b) => a.h - b.h);
   return results.map(item => item.url);
 }
@@ -211,6 +211,19 @@ function renderGallery(imageUrls, isInternalReorder = false) {
     img.className = 'image-item';
     img.style.width = '212.91px';
     img.style.height = 'auto';
+    img.style.opacity = '0';
+    img.style.transition = 'opacity 0.3s ease-in';
+
+    // Optimize loading
+    img.loading = 'eager'; // Load immediately, don't lazy load
+    img.decoding = 'async'; // Decode off main thread
+
+    // Preload and fade in when ready
+    img.decode().then(() => {
+      img.style.opacity = '1';
+    }).catch(() => {
+      img.style.opacity = '1'; // Show anyway if decode fails
+    });
 
     img.onload = function () {
       if (this.naturalWidth > this.naturalHeight) {
