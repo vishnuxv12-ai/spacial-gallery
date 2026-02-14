@@ -3,7 +3,7 @@ window.galleryParams = {
   rotationSensitivity: 346.5,
   sphereRadius: 1320,
   sphereCenterX: 0,
-  sphereCenterY: -150,
+  sphereCenterY: 32,
   sphereCenterZ: -2500,
   smoothingFactor: 0.165,
   autoRotateX: false,
