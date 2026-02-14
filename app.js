@@ -4,7 +4,6 @@ const videoContainer = document.getElementById('video-container');
 const canvasElement = document.getElementById('output_canvas');
 const canvasCtx = canvasElement.getContext('2d');
 const cursor = document.getElementById('hand-cursor');
-// const uploadBtn = document.getElementById('upload-btn');
 const splitToggle = document.getElementById('split-toggle');
 const boundsToggle = document.getElementById('bounds-toggle');
 const controlBounds = document.getElementById('control-bounds');
@@ -14,10 +13,8 @@ const presentationControls = document.getElementById('presentation-controls');
 const exitPresentationBtn = document.getElementById('exit-presentation');
 const toggleCameraPresentationBtn = document.getElementById('toggle-camera-presentation');
 const nightModeToggle = document.getElementById('night-mode-toggle');
-const fileInput = document.getElementById('file-input');
 const speedSlider = document.getElementById('speed-slider');
 const colorMatchToggle = document.getElementById('color-match-toggle');
-const IMAGE_WIDTH = 212.91;
 const disclaimerPopup = document.getElementById('disclaimer-popup');
 const disclaimerBtn = document.getElementById('disclaimer-cta');
 
@@ -170,10 +167,6 @@ document.addEventListener('mousemove', (e) => {
 speedSlider.addEventListener('input', (e) => {
   window.galleryParams.autoRotateSpeed = parseFloat(e.target.value);
 });
-
-// Upload Logic Removed (Replaced by Admin Interface)
-// const uploadBtn = document.getElementById('upload-btn');
-// ... legacy code removed ...
 
 // 2. HAND TRACKING LOGIC
 let latestResults = null;
@@ -339,7 +332,8 @@ function animate() {
       opacity = Math.max(0, Math.min(1, opacity));
 
       const lastOpacity = element._lastOpacity || -1;
-      if (Math.abs(opacity - lastOpacity) > 0.02 || opacity === 1 || opacity === 0) {
+      // Increased throttle threshold for performance
+      if (Math.abs(opacity - lastOpacity) > 0.05 || opacity === 1 || opacity === 0) {
         element.style.opacity = opacity;
         element._lastOpacity = opacity;
       }
