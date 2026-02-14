@@ -61,8 +61,10 @@
 
     .disclaimer-box {
       width: 100%;
-      max-width: 800px;
-      padding: 30px;
+      max-width: 740px;
+      /* Reduced by ~8% from 800px */
+      padding: 25px;
+      /* Reduced padding */
       border-radius: 12px;
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.3);
@@ -70,29 +72,86 @@
     }
 
     .disclaimer-header {
-      background-color: #cbcbcb;
-      margin-bottom: 15px;
+      background-color: #f0f0f0;
+      /* Lighter grey for better contrast */
+      margin-bottom: 0;
+      /* Remove gap */
+      padding: 20px 25px;
+      border-bottom: 1px solid #ddd;
     }
 
     .disclaimer-body {
-      background-color: #e0e0e0;
+      background-color: #fff;
+      padding: 30px 25px;
+    }
+
+    /* New Instructions Box */
+    #instructions-box {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 300px;
+      background: rgba(255, 255, 255, 0.85);
+      /* Glassmorphism */
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 15px 20px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      z-index: 10050;
+      /* Above Bento, below Overlays */
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
+      pointer-events: none;
+      /* Let clicks pass through if needed, or remove if interactive */
+      animation: fadeIn 1s ease-out 1s backwards;
+    }
+
+    #instructions-box h3 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: #000;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   </style>
 </head>
 
 <body>
 
+  <!-- Instructions Box -->
+  <div id="instructions-box">
+    <h3>Instructions:</h3>
+    Give your webcam a slow-motion wave left hand, right hand, bonus points for dramatic flair.<br><br>
+    Then pinch to zoom and poke around a bit… don’t worry, you’re not launching a rocket (probably). 😌
+  </div>
+
   <!-- Disclaimer Popup -->
   <div id="disclaimer-popup">
     <div class="disclaimer-box disclaimer-header">
-      <h2 style="font-size: 2em; font-weight: bold; margin: 0;">We only catch feelings… and hand gestures. 👋</h2>
+      <h2 style="font-size: 1.8rem; font-weight: 700; margin: 0; color: #222;">We only catch feelings… and hand
+        gestures. 👋</h2>
     </div>
     <div class="disclaimer-box disclaimer-body">
-      <h2 style="font-size: 1.5em; font-weight: normal; margin-bottom: 10px;">The camera helps us recognize your
-        gestures live. We don’t record, store, or replay anything.</h2>
-      <h2 style="font-size: 1.5em; font-weight: normal; font-style: italic; margin-bottom: 40px;">All processing happens
-        in real time during your session only.</h2>
-      <button id="disclaimer-cta">Let’s Roll</button>
+      <p style="font-size: 1.1rem; margin: 0 0 15px 0; line-height: 1.6;">The camera helps us recognize your gestures
+        live. We don’t record, store, or replay anything.</p>
+      <p style="font-size: 1.0rem; color: #666; font-style: italic; margin: 0 0 30px 0;">All processing happens in real
+        time during your session only.</p>
+      <button id="disclaimer-cta" style="margin-top: 10px; padding: 12px 40px; font-size: 1.2rem;">Let’s Roll</button>
     </div>
   </div>
 
