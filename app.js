@@ -176,213 +176,10 @@ speedSlider.addEventListener('input', (e) => {
 // ... legacy code removed ...
 
 // 2. HAND TRACKING LOGIC
+let latestResults = null;
+
 function onResults(results) {
-  // Draw the video frame and hand rig
-  canvasCtx.save();
-  canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-  canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-
-  const handDetected = results.multiHandLandmarks && results.multiHandLandmarks.length > 0;
-  if (handDetected) {
-    const hand = results.multiHandLandmarks[0];
-
-    // INDEX FINGER TIP (Point 8) and THUMB TIP (Point 4)
-    const thumb = hand[4];
-    const index = hand[8];
-
-    // Draw hand rig: White lines, Black joints
-    drawConnectors(canvasCtx, hand, HAND_CONNECTIONS, { color: '#FFFFFF', lineWidth: 2 });
-    drawLandmarks(canvasCtx, hand, { color: '#000000', lineWidth: 1, radius: 3 });
-
-    // Calculate midpoint between thumb and index for movement
-    const midX = (thumb.x + index.x) / 2;
-    const midY = (thumb.y + index.y) / 2;
-
-    // CALC ZOOM: Distance between thumb and index
-    const distance = Math.hypot(index.x - thumb.x, index.y - thumb.y);
-
-    // Use pinch gesture to control zoom OR radius
-    if (lastPinchDist > 0) {
-      const delta = distance - lastPinchDist;
-      if (radiusModeEnabled) {
-        window.galleryParams.sphereRadius += delta * 2000;
-        window.galleryParams.sphereRadius = Math.max(500, Math.min(3000, window.galleryParams.sphereRadius));
-        window.updateGalleryRadius();
-      } else {
-        // Add momentum to zoom (Ease in/out)
-        zoomVelocity += delta * 3000;
-      }
-    }
-    lastPinchDist = distance;
-
-    // CALC ROTATION: Use the pinch midpoint to rotate the scene
-    // Split screen logic: Map left/right halves to full range
-    let effectiveX;
-    if (splitScreenEnabled) {
-      effectiveX = midX < 0.5 ? midX * 2 : (midX - 0.5) * 2;
-    } else {
-      effectiveX = midX;
-    }
-
-    // Apply Control Area Scaling & Clamping
-    // Normalize the input relative to the defined area
-    let dx = (effectiveX - 0.5) / window.galleryParams.areaWidth;
-    let dy = (midY - 0.5) / window.galleryParams.areaHeight;
-
-    // Clamp to -0.5 to 0.5 (logical screen bounds)
-    dx = Math.max(-0.5, Math.min(0.5, dx));
-    dy = Math.max(-0.5, Math.min(0.5, dy));
-
-    const handRotY = dx * -window.galleryParams.rotationSensitivity;
-    const handRotX = dy * -window.galleryParams.rotationSensitivity;
-
-    if (!wasHandDetected) {
-      baseRotY = targetRotY - handRotY;
-      baseRotX = targetRotX - handRotX;
-    }
-    targetRotY = baseRotY + handRotY;
-    targetRotX = baseRotX + handRotX;
-
-    // UPDATE CURSOR
-    if (cursorEnabled && !presentationModeEnabled) {
-      cursor.style.display = 'block';
-
-      const targetCursorX = 1 - effectiveX;
-      const targetCursorY = midY;
-      cursorX += (targetCursorX - cursorX) * window.galleryParams.smoothingFactor;
-      cursorY += (targetCursorY - cursorY) * window.galleryParams.smoothingFactor;
-
-      cursor.style.left = (cursorX * 100) + '%';
-      cursor.style.top = (cursorY * 100) + '%';
-    }
-
-    wasHandDetected = true;
-  } else {
-    lastPinchDist = -1;
-    cursor.style.display = 'none';
-
-    // Auto-rotate when no hand is detected
-    wasHandDetected = false;
-
-    if (window.galleryParams.autoRotateX) {
-      targetRotX += window.galleryParams.autoRotateSpeed;
-    }
-    if (window.galleryParams.autoRotateY) {
-      targetRotY += window.galleryParams.autoRotateSpeed;
-    }
-  }
-
-  // --- UPDATE THREE.JS & GSAP ---
-
-  // Apply Rotation (Convert degrees to radians)
-  window.updateSphereRotation(THREE.MathUtils.degToRad(targetRotX), THREE.MathUtils.degToRad(targetRotY));
-
-  // Audio: Update wind sound based on rotation speed
-  if (audioInitialized) {
-    // Estimate speed from GSAP target diff (simplified)
-    // Ideally we'd track actual velocity, but checking target change is okay
-    if (Math.abs(targetRotY) > 0.1 || Math.abs(targetRotX) > 0.1) {
-      const now = Date.now();
-      if (now - lastNoteTime > 200) {
-        playNote();
-        lastNoteTime = now;
-      }
-    }
-  }
-
-  // Mouse Parallax
-  mouseX += (targetMouseX - mouseX) * 0.05;
-  mouseY += (targetMouseY - mouseY) * 0.05;
-
-  // Apply Parallax to Camera
-  camera.position.x = mouseX * 100;
-  camera.position.y = mouseY * 100;
-  camera.lookAt(0, 0, window.galleryParams.sphereCenterZ);
-
-  if (handDetected) {
-    zoomVelocity *= 0.94; // Friction
-    posZ += zoomVelocity;
-    posZ = Math.max(-1000, Math.min(2100, posZ)); // Clamp zoom
-  } else {
-    // Auto reset zoom if no hand
-    posZ += (0 - posZ) * 0.1;
-    zoomVelocity = 0;
-  }
-
-  // Apply Zoom via GSAP
-  window.zoomTo(window.galleryParams.sphereCenterZ + posZ);
-
-  // Visibility Logic (Clipping Front Hemisphere)
-  const sphereCenterZ = mainGroup.position.z;
-  mainGroup.updateMatrixWorld();
-
-  const updateVisibility = (group) => {
-    // Current Sphere Radius for adaptive fading
-    const currentRadius = window.galleryParams.sphereRadius || 1320;
-    const fadeDistance = currentRadius * 0.4; // Scale fade distance with radius
-
-    group.children.forEach(child => {
-      const element = child.element;
-
-
-
-      if (element.classList.contains('image-item')) {
-        child.lookAt(mainGroup.position);
-        child.updateMatrixWorld();
-
-        // Get world position elements after update
-        const elements = child.matrixWorld.elements;
-        const centerZ = elements[14];
-
-        // --- VISIBILITY & CLIPPING ---
-        // Replace complex clip-path with a smoother opacity fade to prevent visual glitches.
-        // This also fixes a bug where position was read before the matrix was updated.
-        // Images on the "front" hemisphere (between camera and sphere center) are faded out.
-
-        const distanceToCenterPlane = centerZ - sphereCenterZ; // Positive when in front
-
-        let opacity = 1.0;
-        // Add slight hysteresis/offset to prevent flickering at the exact boundary
-        if (distanceToCenterPlane > -50) {
-          // Start fading slightly before the center plane to smooth the transition
-          // Normalize fade based on reduced radius
-          opacity = 1.0 - ((distanceToCenterPlane + 50) / fadeDistance);
-        }
-
-        opacity = Math.max(0, Math.min(1, opacity));
-
-        // Performance: Skip visibility toggling to prevent glitches
-        // Just rely on opacity. Browsers handle opacity: 0 efficienty enough.
-
-        // Throttling: Only update opacity if changed significantly
-        const lastOpacity = element._lastOpacity || -1;
-        if (Math.abs(opacity - lastOpacity) > 0.02 || opacity === 1 || opacity === 0) {
-          element.style.opacity = opacity;
-          element._lastOpacity = opacity;
-        }
-
-        element.style.clipPath = 'none'; // Remove clipping to prevent glitches
-
-        // --- MAGNETIC EFFECT ---
-        // Scale up images that are close to the center of the view (XY plane)
-        const baseScale = window.galleryParams.imageScale || 1.0;
-        // Only apply costly sqrt if visible
-        if (opacity > 0) {
-          const distXY = Math.sqrt(elements[12] * elements[12] + elements[13] * elements[13]);
-          let scale = baseScale;
-          if (distXY < 350) { // 350px radius for magnetic effect
-            scale = baseScale + (1 - distXY / 350) * 0.3; // Add magnetic boost
-          }
-          child.scale.set(scale, scale, scale);
-        }
-      }
-    });
-  };
-
-  updateVisibility(sphereGroup);
-
-  renderer.render(scene, camera);
-  canvasCtx.restore();
+  latestResults = results;
 }
 
 const hands = new Hands({
@@ -407,6 +204,171 @@ const mpCamera = new Camera(videoElement, {
   height: 720
 });
 mpCamera.start();
+
+// --- MAIN RENDER LOOP (Decoupled from Camera) ---
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Draw Camera Feed & Skeleton
+  if (latestResults) {
+    canvasCtx.save();
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    canvasCtx.drawImage(latestResults.image, 0, 0, canvasElement.width, canvasElement.height);
+
+    const handDetected = latestResults.multiHandLandmarks && latestResults.multiHandLandmarks.length > 0;
+
+    if (handDetected) {
+      const hand = latestResults.multiHandLandmarks[0];
+      const thumb = hand[4];
+      const index = hand[8];
+
+      drawConnectors(canvasCtx, hand, HAND_CONNECTIONS, { color: '#FFFFFF', lineWidth: 2 });
+      drawLandmarks(canvasCtx, hand, { color: '#000000', lineWidth: 1, radius: 3 });
+
+      // Logic from previous onResults
+      const midX = (thumb.x + index.x) / 2;
+      const midY = (thumb.y + index.y) / 2;
+      const distance = Math.hypot(index.x - thumb.x, index.y - thumb.y);
+
+      if (lastPinchDist > 0) {
+        const delta = distance - lastPinchDist;
+        if (radiusModeEnabled) {
+          window.galleryParams.sphereRadius += delta * 2000;
+          window.galleryParams.sphereRadius = Math.max(500, Math.min(3000, window.galleryParams.sphereRadius));
+          window.updateGalleryRadius();
+        } else {
+          zoomVelocity += delta * 3000;
+        }
+      }
+      lastPinchDist = distance;
+
+      let effectiveX;
+      if (splitScreenEnabled) {
+        effectiveX = midX < 0.5 ? midX * 2 : (midX - 0.5) * 2;
+      } else {
+        effectiveX = midX;
+      }
+
+      let dx = (effectiveX - 0.5) / window.galleryParams.areaWidth;
+      let dy = (midY - 0.5) / window.galleryParams.areaHeight;
+
+      dx = Math.max(-0.5, Math.min(0.5, dx));
+      dy = Math.max(-0.5, Math.min(0.5, dy));
+
+      const handRotY = dx * -window.galleryParams.rotationSensitivity;
+      const handRotX = dy * -window.galleryParams.rotationSensitivity;
+
+      if (!wasHandDetected) {
+        baseRotY = targetRotY - handRotY;
+        baseRotX = targetRotX - handRotX;
+      }
+      targetRotY = baseRotY + handRotY;
+      targetRotX = baseRotX + handRotX;
+
+      // UPDATE CURSOR
+      if (cursorEnabled && !presentationModeEnabled) {
+        cursor.style.display = 'block';
+        const targetCursorX = 1 - effectiveX;
+        const targetCursorY = midY;
+        cursorX += (targetCursorX - cursorX) * window.galleryParams.smoothingFactor;
+        cursorY += (targetCursorY - cursorY) * window.galleryParams.smoothingFactor;
+        cursor.style.left = (cursorX * 100) + '%';
+        cursor.style.top = (cursorY * 100) + '%';
+      }
+
+      wasHandDetected = true;
+    } else {
+      // No hand detected in this frame
+      handleNoHand();
+    }
+    canvasCtx.restore();
+  } else {
+    // No camera results yet
+    handleNoHand();
+  }
+
+  // Common updates (ALWAYS RUNNING)
+  window.updateSphereRotation(THREE.MathUtils.degToRad(targetRotX), THREE.MathUtils.degToRad(targetRotY));
+
+  if (audioInitialized && (Math.abs(targetRotY) > 0.1 || Math.abs(targetRotX) > 0.1)) {
+    const now = Date.now();
+    if (now - lastNoteTime > 200) {
+      playNote();
+      lastNoteTime = now;
+    }
+  }
+
+  mouseX += (targetMouseX - mouseX) * 0.05;
+  mouseY += (targetMouseY - mouseY) * 0.05;
+
+  camera.position.x = mouseX * 100;
+  camera.position.y = mouseY * 100;
+  camera.lookAt(0, 0, window.galleryParams.sphereCenterZ);
+
+  if (wasHandDetected) { // Use state from current or recent frame
+    zoomVelocity *= 0.94;
+    posZ += zoomVelocity;
+    posZ = Math.max(-1000, Math.min(2100, posZ));
+  } else {
+    posZ += (0 - posZ) * 0.1;
+    zoomVelocity = 0;
+  }
+
+  window.zoomTo(window.galleryParams.sphereCenterZ + posZ);
+
+  const sphereCenterZ = mainGroup.position.z;
+  mainGroup.updateMatrixWorld();
+
+  // Reuse existing updateVisibility function
+  const currentRadius = window.galleryParams.sphereRadius || 1320;
+  const fadeDistance = currentRadius * 0.4;
+
+  sphereGroup.children.forEach(child => {
+    const element = child.element;
+    if (element.classList.contains('image-item')) {
+      child.lookAt(mainGroup.position);
+      child.updateMatrixWorld();
+      const elements = child.matrixWorld.elements;
+      const centerZ = elements[14];
+      const distanceToCenterPlane = centerZ - sphereCenterZ;
+
+      let opacity = 1.0;
+      if (distanceToCenterPlane > -50) {
+        opacity = 1.0 - ((distanceToCenterPlane + 50) / fadeDistance);
+      }
+      opacity = Math.max(0, Math.min(1, opacity));
+
+      const lastOpacity = element._lastOpacity || -1;
+      if (Math.abs(opacity - lastOpacity) > 0.02 || opacity === 1 || opacity === 0) {
+        element.style.opacity = opacity;
+        element._lastOpacity = opacity;
+      }
+
+      element.style.clipPath = 'none';
+
+      const baseScale = window.galleryParams.imageScale || 1.0;
+      if (opacity > 0) {
+        const distXY = Math.sqrt(elements[12] * elements[12] + elements[13] * elements[13]);
+        let scale = baseScale;
+        if (distXY < 350) scale = baseScale + (1 - distXY / 350) * 0.3;
+        child.scale.set(scale, scale, scale);
+      }
+    }
+  });
+
+  renderer.render(scene, camera);
+}
+
+function handleNoHand() {
+  lastPinchDist = -1;
+  cursor.style.display = 'none';
+  wasHandDetected = false;
+  if (window.galleryParams.autoRotateX) targetRotX += window.galleryParams.autoRotateSpeed;
+  if (window.galleryParams.autoRotateY) targetRotY += window.galleryParams.autoRotateSpeed;
+}
+
+// Start Loop
+animate();
 
 // Start in Presentation Mode
 togglePresentationMode(true);
