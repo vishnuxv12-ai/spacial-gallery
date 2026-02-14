@@ -327,7 +327,10 @@ function onResults(results) {
 
 
       if (element.classList.contains('image-item')) {
-        child.lookAt(mainGroup.position);
+        // PERF: Removed child.lookAt(mainGroup.position). 
+        // Images are static relative to the sphere group, so we don't need to re-orient them every frame.
+
+        // We only need the world position for opacity calculations.
         child.updateMatrixWorld();
 
         // Get world position elements after update
