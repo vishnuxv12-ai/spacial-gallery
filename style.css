@@ -47,9 +47,7 @@ body {
   width: 212.91px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   border-radius: 10px;
-  backface-visibility: hidden;
-  /* will-change: transform, opacity;  <-- Removed to prevent rendering glitches */
-  transform-style: preserve-3d;
+  /* Removed backface-visibility/transform-style to reduce flickering */
 }
 
 #hand-cursor {

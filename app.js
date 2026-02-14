@@ -336,6 +336,8 @@ function animate() {
       if (Math.abs(opacity - lastOpacity) > 0.05 || opacity === 1 || opacity === 0) {
         element.style.opacity = opacity;
         element._lastOpacity = opacity;
+        // Disable interaction if invisible to prevent UI blocking
+        element.style.pointerEvents = opacity < 0.1 ? 'none' : 'auto';
       }
 
       element.style.clipPath = 'none';

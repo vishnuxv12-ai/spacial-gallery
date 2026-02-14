@@ -190,6 +190,13 @@ function renderGallery(imageUrls, isInternalReorder = false) {
     img.style.width = '212.91px';
     img.style.height = 'auto';
 
+    img.onload = function () {
+      if (this.naturalWidth > this.naturalHeight) {
+        // Landscape: Increase size by 10%
+        this.style.width = (212.91 * 1.1) + 'px';
+      }
+    };
+
     // Create CSS3D Object
     const object = new THREE.CSS3DObject(img);
     object.position.set(x * window.galleryParams.sphereRadius, y * window.galleryParams.sphereRadius, z * window.galleryParams.sphereRadius);
