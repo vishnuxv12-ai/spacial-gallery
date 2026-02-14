@@ -63,6 +63,13 @@ gridGroup.scale.set(0.99, 0.99, 0.99); // Fix Z-fighting by placing grid slightl
 mainGroup.add(gridGroup);
 gridGroup.visible = false; // Hide grid efficiently
 
+// Handle window resize
+window.addEventListener('resize', () => {
+  window.camera.aspect = window.innerWidth / window.innerHeight;
+  window.camera.updateProjectionMatrix();
+  window.renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
 window.updateGalleryRadius = () => {
   const r = window.galleryParams.sphereRadius;
   sphereGroup.children.forEach(obj => {
@@ -80,8 +87,10 @@ window.zoomTo = gsap.quickTo(mainGroup.position, "z", { duration: 0.8, ease: "po
 
 let galleryOriginalUrls = [];
 let gallerySortedUrls = null;
+const colorCache = new Map();
 
 const getDominantColor = (url) => {
+  if (colorCache.has(url)) return Promise.resolve(colorCache.get(url));
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "Anonymous";
@@ -93,7 +102,9 @@ const getDominantColor = (url) => {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, 1, 1);
       const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-      resolve({ r, g, b });
+      const rgb = { r, g, b };
+      colorCache.set(url, rgb);
+      resolve(rgb);
     };
     img.onerror = () => resolve({ r: 0, g: 0, b: 0 });
   });
@@ -119,13 +130,19 @@ const rgbToHsl = (r, g, b) => {
 };
 
 async function sortImagesByColor(urls) {
-  const colorPromises = urls.map(async (url) => {
-    const rgb = await getDominantColor(url);
-    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-    return { url, h: hsl[0] };
-  });
-
-  const results = await Promise.all(colorPromises);
+  // Process in batches to prevent network/CPU congestion
+  const batchSize = 10;
+  const results = [];
+  for (let i = 0; i < urls.length; i += batchSize) {
+    const batch = urls.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(async (url) => {
+      const rgb = await getDominantColor(url);
+      const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+      return { url, h: hsl[0] };
+    }));
+    results.push(...batchResults);
+  }
+  
   results.sort((a, b) => a.h - b.h);
   return results.map(item => item.url);
 }
@@ -145,7 +162,12 @@ async function toggleColorSort(enable) {
 function renderGallery(imageUrls, isInternalReorder = false) {
   // Clear existing group
   while (sphereGroup.children.length > 0) {
-    sphereGroup.remove(sphereGroup.children[0]);
+    const obj = sphereGroup.children[0];
+    // Break circular reference for GC
+    if (obj.element && obj.element.threeObject) {
+      obj.element.threeObject = null;
+    }
+    sphereGroup.remove(obj);
   }
 
   // Clear grid
