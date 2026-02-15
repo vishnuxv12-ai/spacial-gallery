@@ -1,4 +1,4 @@
-# Spatial Gesture Gallery
+# Echo Orb
 
 A 3D immersive image gallery controlled by hand gestures, built with Three.js and MediaPipe. Images are arranged on a dynamic Fibonacci sphere, allowing for an interactive spatial browsing experience.
 
