@@ -281,10 +281,17 @@ function renderGallery(imageUrls, isInternalReorder = false) {
 }
 
 // Initial Random Images
-// Initial Images from Data Module
-const initialImages = (window.galleryData && window.galleryData.images && window.galleryData.images.length > 0)
-  ? window.galleryData.images
-  : Array.from({ length: 56 }, (_, i) => `https://picsum.photos/seed/${i + 10}/300/400`);
+// STRICT MODE: Force use of gallery-data.js, no fallback to old seeds
+let initialImages = [];
+if (window.galleryData && window.galleryData.images && window.galleryData.images.length > 0) {
+  console.log('%c[Gallery] Loaded ' + window.galleryData.images.length + ' images from gallery-data.js', 'color: #0f0; font-weight: bold;');
+  initialImages = window.galleryData.images;
+} else {
+  console.error('[Gallery] window.galleryData is missing or empty! Check gallery-data.js loading.');
+  alert('Error: Gallery data not loaded. Please refresh or check console.');
+  // Emergency fallback just so the page isn't broken, but clearly different (grayscale)
+  initialImages = Array.from({ length: 10 }, (_, i) => `https://picsum.photos/200/300?grayscale&random=${i}`);
+}
 
 renderGallery(initialImages);
 
